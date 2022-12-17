@@ -260,7 +260,7 @@ impl OpenAiGptModel {
             let temp = layer.forward_t(&hidden_state, attention_mask.as_ref(), train);
             hidden_state = temp.0;
             if let Some(attentions) = all_attentions.borrow_mut() {
-                attentions.push(temp.1.as_ref().unwrap().copy());
+                attentions.push(temp.1.unwrap());
             };
             if let Some(hidden_states) = all_hidden_states.borrow_mut() {
                 hidden_states.push(hidden_state.as_ref().copy());
@@ -457,7 +457,7 @@ impl OpenAIGenerator {
     /// use rust_bert::openai_gpt::OpenAIGenerator;
     /// use rust_bert::pipelines::generation_utils::GenerateConfig;
     /// let generate_config = GenerateConfig {
-    ///     max_length: 30,
+    ///     max_length: Some(30),
     ///     do_sample: true,
     ///     num_beams: 5,
     ///     temperature: 1.1,
@@ -470,7 +470,15 @@ impl OpenAIGenerator {
     /// ```
     pub fn new(generate_config: GenerateConfig) -> Result<OpenAIGenerator, RustBertError> {
         let vocab_path = generate_config.vocab_resource.get_local_path()?;
-        let merges_path = generate_config.merges_resource.get_local_path()?;
+        let merges_path = generate_config
+            .merges_resource
+            .as_ref()
+            .ok_or_else(|| {
+                RustBertError::InvalidConfigurationError(
+                    "GPT expects a merges resources to be provided".to_string(),
+                )
+            })?
+            .get_local_path()?;
 
         let tokenizer = TokenizerOption::from_file(
             ModelType::OpenAiGpt,

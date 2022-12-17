@@ -254,19 +254,21 @@ impl TokenClassificationConfig {
     /// * vocab - The `ResourceProvider` pointing to the tokenizers' vocabulary to load (e.g.  vocab.txt/vocab.json)
     /// * vocab - An optional `ResourceProvider` pointing to the tokenizers' merge file to load (e.g.  merges.txt), needed only for Roberta.
     /// * lower_case - A `bool` indicating whether the tokenizer should lower case all input (in case of a lower-cased model)
-    pub fn new<R>(
+    pub fn new<RM, RC, RV>(
         model_type: ModelType,
-        model_resource: R,
-        config_resource: R,
-        vocab_resource: R,
-        merges_resource: Option<R>,
+        model_resource: RM,
+        config_resource: RC,
+        vocab_resource: RV,
+        merges_resource: Option<RV>,
         lower_case: bool,
         strip_accents: impl Into<Option<bool>>,
         add_prefix_space: impl Into<Option<bool>>,
         label_aggregation_function: LabelAggregationOption,
     ) -> TokenClassificationConfig
     where
-        R: ResourceProvider + Send + 'static,
+        RM: ResourceProvider + Send + 'static,
+        RC: ResourceProvider + Send + 'static,
+        RV: ResourceProvider + Send + 'static,
     {
         TokenClassificationConfig {
             model_type,
@@ -889,7 +891,10 @@ impl TokenClassificationModel {
                     None,
                     false,
                 );
-                let score = output.exp() / output.exp().sum_dim_intlist(&[-1], true, Kind::Float);
+                let score = output.exp()
+                    / output
+                        .exp()
+                        .sum_dim_intlist([-1].as_slice(), true, Kind::Float);
                 let label_indices = score.argmax(-1, true);
                 for sentence_idx in 0..label_indices.size()[0] {
                     let labels = label_indices.get(sentence_idx);

@@ -39,9 +39,6 @@ fn test_generation_reformer() -> anyhow::Result<()> {
     let vocab_resource = Box::new(RemoteResource::from_pretrained(
         ReformerVocabResources::CRIME_AND_PUNISHMENT,
     ));
-    let merges_resource = Box::new(RemoteResource::from_pretrained(
-        ReformerVocabResources::CRIME_AND_PUNISHMENT,
-    ));
     let model_resource = Box::new(RemoteResource::from_pretrained(
         ReformerModelResources::CRIME_AND_PUNISHMENT,
     ));
@@ -51,9 +48,9 @@ fn test_generation_reformer() -> anyhow::Result<()> {
         model_resource,
         config_resource,
         vocab_resource,
-        merges_resource,
+        merges_resource: None,
         min_length: 100,
-        max_length: 100,
+        max_length: Some(100),
         do_sample: false,
         early_stopping: true,
         no_repeat_ngram_size: 3,
